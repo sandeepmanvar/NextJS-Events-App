@@ -1,9 +1,9 @@
 import { Fragment } from "react";
+import Head from "next/head";
 import { getFeaturedEvents, getEventById } from "../../helper/api-utils";
 import EventSummary from "../../components/event-detail/EventSummary";
 import EventLogistics from "../../components/event-detail/EventLogistics";
 import EventContent from "../../components/event-detail/EventContent";
-import ErrorAlert from "../../components/ui/ErrorAlert";
 
 function EventDetailPage(props) {
   const event = props.selectedEvent;
@@ -18,6 +18,10 @@ function EventDetailPage(props) {
 
   return (
     <Fragment>
+      <Head>
+        <title>{event.title}</title>
+        <meta name="description" content={event.description} />
+      </Head>
       <EventSummary title={event.title} />
       <EventLogistics
         date={event.date}
@@ -26,6 +30,13 @@ function EventDetailPage(props) {
         imageAlt={event.title}
       />
       <EventContent>
+        <Head>
+          <title>{event.title}</title>
+          <meta
+            name="description"
+            content={event.description}
+          />
+        </Head>
         <p>{event.description}</p>
       </EventContent>
     </Fragment>
@@ -39,7 +50,7 @@ export async function getStaticProps(context) {
     props: {
       selectedEvent: event,
     },
-    revalidate: 30
+    revalidate: 30,
   };
 }
 
@@ -50,7 +61,7 @@ export async function getStaticPaths() {
 
   return {
     paths,
-    fallback: "blocking"
+    fallback: "blocking",
   };
 }
 
