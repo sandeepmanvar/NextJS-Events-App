@@ -1,5 +1,21 @@
-function handler(req, res) {
+import {
+  connectDatabase,
+  insertDocument,
+  getAllDocuments,
+} from "../../../helper/db-utils";
+
+async function handler(req, res) {
   const eventId = req.query.eventId;
+
+  let client;
+
+  try {
+    client = await connectDatabase();
+  } catch (error) {
+    console.log(error.message);
+    res.status(500).json({ message: "Connecting to the database failed!" });
+    return;
+  }
 
   if (req.method === "POST") {
     const { email, name, text } = req.body;
@@ -11,30 +27,42 @@ function handler(req, res) {
       !text ||
       !text.trim() === ""
     ) {
-        res.status(422).json({
-            message: "Invalid input."
-        });
-        return;
+      res.status(422).json({
+        message: "Invalid input.",
+      });
+      client.close();
+      return;
     }
 
     const newComment = {
-        id: new Date().toISOString(),
-        email,
-        name,
-        text
+      email,
+      name,
+      text,
+      eventId,
     };
-    console.log(newComment); 
-    res.status(201).json({message: "Added comment.", comment: newComment});
+
+    let result;
+
+    try {
+      result = await insertDocument(client, "comments", newComment);
+      newComment._id = result.insertedId;
+      res.status(201).json({ message: "Added comment.", comment: newComment });
+    } catch (error) {
+      res.status(500).json({ message: "Inserting data failed!" });
+    }
   }
 
   if (req.method === "GET") {
-      const dummyList = [
-          {id: 'c1', name: 'Sandeep', text:'A first comment.'},
-          {id: 'c2', name: 'Thomas', text:'A second comment.'},
-      ];
-
-      res.status(200).json({comments: dummyList});
+    try {
+      const documents = await getAllDocuments(client, "comments", { _id: -1 });
+      res.status(200).json({ comments: documents });
+    } catch (error) {
+      console.log(error.message);
+      res.status(500).json({ message: "Getting comments failed!" });
+    }
   }
+
+  client.close();
 }
 
 export default handler;
